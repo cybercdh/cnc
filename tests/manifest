@@ -1,0 +1,6 @@
+# name|args
+basic|
+inline|-i
+simple|-s
+custom|-c #,;
+inline_stdin|-i

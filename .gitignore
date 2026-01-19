@@ -1,0 +1,43 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+#*#
+
+# Build / packaging artifacts
+build/
+dist/
+release/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.deb
+*.dsc
+*.buildinfo
+*.changes
+debian/
+
+# Logs / temp
+*.log
+tmp/
+.tmp/
+
+# Local env
+.env
+.venv/
+venv/
+
+# Test outputs
+.pytest_cache/
+coverage/
+*.coverage
+tests/tmp/
+tests/*.actual
+tests/*.diff

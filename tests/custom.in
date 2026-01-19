@@ -1,0 +1,5 @@
+; ini comment
+# hash comment
+// not a comment with custom
+value ; inline unhandled unless -i
+

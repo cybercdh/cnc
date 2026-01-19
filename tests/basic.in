@@ -1,0 +1,9 @@
+# top
+// c style
+-- sql
+; ini
+
+ value
+value2 # inline but not removed since -i not used
+text // inline after text
+

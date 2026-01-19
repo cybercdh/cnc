@@ -1,0 +1,6 @@
+key=value# comment
+x=1// slash comment; not both
+path=/tmp;# after semicolon
+sql=select 1-- ok
+mix=value// here # there ; later
+

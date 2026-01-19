@@ -1,0 +1,5 @@
+key=value
+x=1
+path=/tmp
+sql=select 1
+mix=value
