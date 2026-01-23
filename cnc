@@ -132,67 +132,87 @@ fi
 
 # Function to remove lines starting with comments
 remove_comment_lines() {
-    local file="$1"
     local input="$1"
-    
+
     if [[ "$input" == "-" ]]; then
         input="/dev/stdin"
     fi
-    
-    while IFS= read -r line; do
-        local is_comment=false
-        
-        # Check if line starts with any comment pattern (after whitespace)
-        for pattern in "${PATTERNS[@]}"; do
-            if [[ "$line" =~ ^[[:space:]]*$(echo "$pattern" | sed 's/[]\/$*.^[]/\\&/g') ]]; then
-                is_comment=true
-                break
-            fi
-        done
-        
-        if [[ "$is_comment" == false ]]; then
-            # Not a comment line
-            if [[ "$KEEP_BLANK" == true ]] || [[ -n "${line//[[:space:]]/}" ]]; then
-                echo "$line"
-            fi
+
+    # Build grep pattern for all comment types
+    local grep_pattern=""
+    for pattern in "${PATTERNS[@]}"; do
+        # Escape special regex characters for grep ERE
+        local escaped=$(printf '%s\n' "$pattern" | sed 's/[]\/$*.^[]/\\&/g')
+        if [[ -z "$grep_pattern" ]]; then
+            grep_pattern="^[[:space:]]*${escaped}"
+        else
+            grep_pattern="${grep_pattern}|^[[:space:]]*${escaped}"
         fi
-    done < "$input"
+    done
+
+    # Use grep to filter out comment lines, then optionally filter blank lines
+    if [[ "$KEEP_BLANK" == true ]]; then
+        grep -Ev "$grep_pattern" "$input"
+    else
+        grep -Ev "$grep_pattern" "$input" | grep -v '^[[:space:]]*$'
+    fi
 }
 
 # Function to remove inline comments
 remove_inline_comments() {
-    local file="$1"
     local input="$1"
-    
+
     if [[ "$input" == "-" ]]; then
         input="/dev/stdin"
     fi
-    
-    while IFS= read -r line; do
-        local processed_line="$line"
 
-        # Find earliest occurrence of any pattern and trim from there
-        local found=false
-        local min_pos=${#line}
+    # For single pattern, use fast sed
+    if [[ ${#PATTERNS[@]} -eq 1 ]]; then
+        local pattern="${PATTERNS[0]}"
+        local escaped=$(printf '%s\n' "$pattern" | sed 's/[&/\]/\\&/g')
+        if [[ "$KEEP_BLANK" == true ]]; then
+            sed "s/${escaped}.*$//" "$input"
+        else
+            sed "s/${escaped}.*$//" "$input" | grep -v '^[[:space:]]*$'
+        fi
+    else
+        # For multiple patterns, use awk to find earliest occurrence
+        local awk_patterns=""
         for pattern in "${PATTERNS[@]}"; do
-            if [[ "$line" == *"$pattern"* ]]; then
-                local before="${line%%$pattern*}"
-                local pos=${#before}
-                if (( pos < min_pos )); then
-                    min_pos=$pos
-                    found=true
-                fi
-            fi
+            # Escape pattern for awk (escape backslashes and quotes)
+            local escaped=$(printf '%s\n' "$pattern" | sed 's/\\/\\\\/g; s/"/\\"/g')
+            awk_patterns="${awk_patterns}\"${escaped}\","
         done
-        if [[ "$found" == true ]]; then
-            processed_line="${line:0:min_pos}"
-        fi
-        
-        # Output line if not blank or if keeping blanks
-        if [[ "$KEEP_BLANK" == true ]] || [[ -n "${processed_line//[[:space:]]/}" ]]; then
-            echo "$processed_line"
-        fi
-    done < "$input"
+        awk_patterns="${awk_patterns%,}"  # Remove trailing comma
+
+        local keep_blank_var="$KEEP_BLANK"
+        awk -v patterns="$awk_patterns" -v keep_blank="$keep_blank_var" '
+        BEGIN {
+            split(patterns, pats, /","/)
+            for (i in pats) {
+                gsub(/^"/, "", pats[i])
+                gsub(/"$/, "", pats[i])
+            }
+        }
+        {
+            min_pos = length($0) + 1
+            for (i in pats) {
+                pos = index($0, pats[i])
+                if (pos > 0 && pos < min_pos) {
+                    min_pos = pos
+                }
+            }
+            if (min_pos <= length($0)) {
+                line = substr($0, 1, min_pos - 1)
+            } else {
+                line = $0
+            }
+            if (keep_blank == "true" || line !~ /^[[:space:]]*$/) {
+                print line
+            }
+        }
+        ' "$input"
+    fi
 }
 
 # Process the file
