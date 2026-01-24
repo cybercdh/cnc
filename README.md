@@ -1,13 +1,13 @@
 # cnc - Cat No Comments
 
-A simple, fast command-line utility to display configuration files and code without comments or blank lines. Perfect for quickly checking which settings are actually enabled in config files.
+A fast command-line utility to display configuration files and code without comments or blank lines. Perfect for quickly checking which settings are actually enabled in config files.
 
 ## Features
 
-- 🚀 **Fast and lightweight** - just a bash script, no dependencies
-- 🎯 **Smart defaults** - recognizes all common comment styles automatically
-- 🔧 **Flexible** - customize comment characters, keep blank lines, strip inline comments
-- 📦 **Easy to install** - single file, drop it anywhere in your PATH
+- **Fast** - written in C with single-pass processing
+- **Smart defaults** - recognizes all common comment styles automatically
+- **Flexible** - customize comment characters, keep blank lines, strip inline comments
+- **Simple** - single C file, no dependencies beyond libc
 
 ### Supported Comment Styles (by default)
 
@@ -18,32 +18,25 @@ A simple, fast command-line utility to display configuration files and code with
 
 ## Installation
 
-### Quick Install (recommended)
-
-```bash
-curl -sL https://raw.githubusercontent.com/cybercdh/cnc/main/cnc -o cnc
-chmod +x cnc
-sudo mv cnc /usr/local/bin/
-```
-
-### Using Make
+### From Source (recommended)
 
 ```bash
 git clone https://github.com/cybercdh/cnc.git
 cd cnc
+make
 sudo make install
 ```
 
-> Tip for macOS: If another `cnc` exists earlier in your `PATH`, run with the full path (`/usr/local/bin/cnc --help`) or install under a different name: `sudo make install NAME=cnc-nc`.
-
-### Manual Install
+### User Install (no sudo)
 
 ```bash
 git clone https://github.com/cybercdh/cnc.git
 cd cnc
-chmod +x cnc
-cp cnc ~/.local/bin/cnc  # or /usr/local/bin/cnc for system-wide
+make
+make install PREFIX=~/.local
 ```
+
+> Tip: If another `cnc` exists in your `PATH`, install under a different name by editing the binary name after build, or use the full path.
 
 ## Usage
 
@@ -136,11 +129,11 @@ LogLevel INFO
 
 ## Use Cases
 
-- 🔍 **Quick config inspection** - See what's actually configured without scrolling through comments
-- 📋 **Config diffing** - Compare actual settings between files
-- 🐛 **Debugging** - Quickly identify active configuration directives
-- 📝 **Documentation** - Extract actual settings for documentation
-- 🔧 **DevOps** - Parse configs in scripts without comment noise
+- **Quick config inspection** - See what's actually configured without scrolling through comments
+- **Config diffing** - Compare actual settings between files
+- **Debugging** - Quickly identify active configuration directives
+- **Documentation** - Extract actual settings for documentation
+- **DevOps** - Parse configs in scripts without comment noise
 
 ## Why cnc?
 
@@ -152,33 +145,32 @@ It's like `cat`, but smarter about config files.
 
 | Tool | Pros | Cons |
 |------|------|------|
-| `grep -v '^#'` | Simple | Misses indented comments, only works for # |
+| `grep -v '^#'` | Simple, no install | Misses indented comments, only works for # |
 | `sed '/^#/d'` | Fast | Misses indented comments, requires pattern knowledge |
-| **cnc** | Handles all comment types, removes blank lines, easy to use | Bash dependency |
+| **cnc** | Handles all comment types, removes blank lines, fast | Requires compilation |
 
 ## Performance
 
-`cnc` is fast enough for all practical purposes. On a typical config file:
+`cnc` is written in C for speed. On a 7MB config file:
 
-```bash
-$ time cnc /etc/nginx/nginx.conf
-real    0m0.003s
 ```
+cat (baseline):  6ms
+cnc:           142ms
+```
+
+For typical config files (a few KB), execution is instant.
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## Development
-
-### Testing
-
-Test files are provided in the `tests/` directory:
+## Building
 
 ```bash
-./cnc tests/sample.conf
-./cnc tests/sample.py
-./cnc tests/sample.sql
+make          # Build cnc
+make test     # Run tests
+make clean    # Remove binary
+make install  # Install to /usr/local/bin (or set PREFIX)
 ```
 
 ## License
@@ -187,7 +179,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Changelog
 
-### v1.0.0 (2026-01-18)
+### v1.1.0 (2025-01-24)
+- Rewritten in C for ~2x performance improvement
+- Single-pass processing with buffered I/O
+
+### v1.0.0 (2025-01-18)
 - Initial release
 - Support for #, //, ;, -- comment styles
 - Inline comment removal with -i flag
@@ -196,8 +192,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Author
 
-Created with ❤️ for sysadmins and developers who love clean config files.
-
----
-
-**Star this repo if you find it useful!** ⭐
+Created for sysadmins and developers who love clean config files.

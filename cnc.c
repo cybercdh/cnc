@@ -12,7 +12,7 @@
 #include <getopt.h>
 #include <errno.h>
 
-#define VERSION "1.0.0"
+#define VERSION "1.1.0"
 #define INITIAL_LINE_SIZE 4096
 #define MAX_PATTERNS 32
 
