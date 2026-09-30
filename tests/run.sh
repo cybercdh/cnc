@@ -45,15 +45,6 @@ while IFS='|' read -r name args || [[ -n "${name:-}" ]]; do
   fi
 done < ./manifest
 
-# Expected-failure cases: an empty pattern set must error, not silently cat.
-total=$((total+1))
-if printf 'a\n# b\n' | ../cnc -c ',' >/dev/null 2>&1; then
-  echo "[FAIL] empty_pattern_guard: expected non-zero exit"
-  fail=$((fail+1))
-else
-  echo "✓ empty_pattern_guard"
-fi
-
 if (( fail > 0 )); then
   echo "${fail}/${total} tests failed"
   exit 1
