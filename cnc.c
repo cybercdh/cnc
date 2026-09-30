@@ -12,7 +12,7 @@
 #include <getopt.h>
 #include <errno.h>
 
-#define VERSION "1.1.0"
+#define VERSION "1.1.1"
 #define INITIAL_LINE_SIZE 4096
 #define MAX_PATTERNS 32
 
@@ -24,6 +24,9 @@ static bool simple_mode = false;
 /* Comment patterns */
 static const char *patterns[MAX_PATTERNS];
 static int pattern_count = 0;
+/* Whether patterns[] holds heap allocations from parse_custom_patterns that
+ * must be freed on exit (default/simple patterns are string literals). */
+static bool patterns_allocated = false;
 
 /* Default patterns: ordered by length (longest first for correct matching) */
 static const char *default_patterns[] = {"--", "//", "#", ";"};
@@ -75,13 +78,29 @@ static void parse_custom_patterns(const char *chars) {
     char *token = strtok(copy, ",");
     while (token && pattern_count < MAX_PATTERNS) {
         /* Skip leading whitespace */
-        while (*token && isspace(*token)) token++;
+        while (*token && isspace((unsigned char)*token)) token++;
         if (*token) {
-            patterns[pattern_count++] = strdup(token);
+            char *dup = strdup(token);
+            if (!dup) {
+                fprintf(stderr, "Error: Memory allocation failed\n");
+                exit(1);
+            }
+            patterns[pattern_count++] = dup;
+            patterns_allocated = true;
         }
         token = strtok(NULL, ",");
     }
     free(copy);
+}
+
+/* Free any heap-allocated custom patterns. */
+static void free_patterns(void) {
+    if (!patterns_allocated) {
+        return;
+    }
+    for (int i = 0; i < pattern_count; i++) {
+        free((void *)patterns[i]);
+    }
 }
 
 /* Check if line is blank (only whitespace) */
@@ -250,6 +269,15 @@ int main(int argc, char *argv[]) {
         pattern_count = default_pattern_count;
     }
 
+    /* An empty pattern set means nothing would ever be treated as a comment,
+     * silently turning cnc into plain cat. That is almost never intended
+     * (e.g. -c ',' or -c ''), so fail loudly instead. */
+    if (pattern_count == 0) {
+        fprintf(stderr, "Error: no comment patterns to match (check -c value)\n");
+        free_patterns();
+        return 1;
+    }
+
     /* Determine input source */
     FILE *fp;
     const char *filename = NULL;
@@ -271,5 +299,6 @@ int main(int argc, char *argv[]) {
         fclose(fp);
     }
 
+    free_patterns();
     return result;
 }
