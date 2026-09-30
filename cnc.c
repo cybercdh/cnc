@@ -269,15 +269,6 @@ int main(int argc, char *argv[]) {
         pattern_count = default_pattern_count;
     }
 
-    /* An empty pattern set means nothing would ever be treated as a comment,
-     * silently turning cnc into plain cat. That is almost never intended
-     * (e.g. -c ',' or -c ''), so fail loudly instead. */
-    if (pattern_count == 0) {
-        fprintf(stderr, "Error: no comment patterns to match (check -c value)\n");
-        free_patterns();
-        return 1;
-    }
-
     /* Determine input source */
     FILE *fp;
     const char *filename = NULL;

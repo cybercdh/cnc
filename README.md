@@ -180,7 +180,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Changelog
 
 ### v1.1.1
-- Error out when `-c` yields no comment patterns (e.g. `-c ','`) instead of silently passing every line through
 - Free custom-pattern allocations on exit (clean under leak checkers)
 
 ### v1.1.0 (2025-01-24)
